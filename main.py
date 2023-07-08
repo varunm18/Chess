@@ -1,8 +1,8 @@
 # Example file showing a circle moving on screen
 import pygame
 from piece import Piece
+from piece import pieces
 import helpers
-from initboard import pieces
 
 def main():
     # pygame setup
@@ -15,27 +15,33 @@ def main():
     selected = None
     board = pygame.Surface((664, 664))
 
-    drawBoard(board, screen)
+    board = drawBoard(board)
     drawIndex(screen)
-    drawPieces(screen) 
+
+    group = drawPieces(screen, True)
 
     while running:
         # poll for events
         # pygame.QUIT event means the user clicked X to close your window
-        for event in pygame.event.get():
-            if event.type == pygame.MOUSEBUTTONUP:
+        eventList = pygame.event.get()
+        for event in eventList:
+            if event.type == pygame.MOUSEBUTTONDOWN:
                 selected = helpers.posToLoc(pygame.mouse.get_pos())
-                if(pieces[selected]==None):
-                    selected = None
+                if(selected!=None and pieces[selected]==None):
+                    selected = None  
                 else:
-                    drawBoard(board, screen)
-                    if(selected):
-                        drawSelected(screen, selected)
-                    drawIndex(screen)
-                    drawPieces(screen)    
+                    pieces[selected].findValidMoves()
             if event.type == pygame.QUIT:
                 running = False
 
+        screen.fill((48,46,43))
+        screen.blit(board, (68, 68))
+        if(selected):
+            drawSelected(screen, selected)
+        drawIndex(screen)
+        group = drawPieces(screen, False) 
+        group.update(eventList)
+        group.draw(screen)
         # flip() the display to put your work on screen
         pygame.display.flip()
 
@@ -46,7 +52,7 @@ def main():
 
     pygame.quit()
 
-def drawBoard(board, screen):
+def drawBoard(board):
 
     board.fill((238,238,210))
 
@@ -58,7 +64,7 @@ def drawBoard(board, screen):
             for x in range(0, 8, 2):
                 pygame.draw.rect(board, (117,150,86), ((x+1)*83, y*83, 83, 83))
 
-    screen.blit(board, (68, 68))
+    return board
 
 def drawSelected(screen, loc):
     piece = pieces[loc]
@@ -67,7 +73,6 @@ def drawSelected(screen, loc):
     board = pygame.Surface((83, 83))
     pygame.draw.rect(board, (187,201,64), (0, 0, 83, 83))
     screen.blit(board, (68+x*83, 649-y*83))
-
 
 def drawIndex(screen):
 
@@ -83,21 +88,23 @@ def drawIndex(screen):
         textRect.topleft = (74, 83*(i+1)-8)
         screen.blit(text, textRect)
 
-def drawPieces(screen):
-    pieceList = []
+def drawPieces(screen, init):
+    group = pygame.sprite.Group()
+    selected = None
     for key in pieces:
         if pieces[key] != None:
-            pieceList.append(pieces[key])
-            pieces[key].draw(screen)
+            if pieces[key].drag.dragging:
+                selected = key
+            else:
+               group.add(pieces[key])  
 
+            if init:
+                pieces[key].draw(screen)
 
-    # pieces = [Piece("w", "r", "a1"), Piece("w", "n", "b1"), Piece("w", "b", "c1"), Piece("w", "q", "d1"), Piece("w", "k", "e1"), Piece("w", "b", "f1"), Piece("w", "n", "g1"), Piece("w", "r", "h1"), Piece("b", "r", "a8"), Piece("b", "n", "b8"), Piece("b", "b", "c8"), Piece("b", "q", "d8"), Piece("b", "k", "e8"), Piece("b", "b", "f8"), Piece("b", "n", "g8"), Piece("b", "r", "h8")]
-    # for i in range(8):
-    #     pieces.append(Piece("w", "p", chr(97+i)+"2"))
-    #     pieces.append(Piece("b", "p", chr(97+i)+"7"))    
+    if(selected):
+        group.add(pieces[selected])
 
-    # for piece in pieces:
-    #     piece.draw(screen)
+    return group
   
 if __name__=="__main__":
     main()

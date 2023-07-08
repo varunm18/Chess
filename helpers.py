@@ -2,7 +2,6 @@
 def locToPos(loc):
     file = int(ord(loc[0])) - 96
     rank = int(loc[1])
-    print(f"File: {file} Rank: {rank}")
     return file*83+26.5, 773.5-rank*83
 
 def posToLoc(pos):
@@ -14,7 +13,7 @@ def posToLoc(pos):
     return chr(file+96)+str(rank)
 
 def pond(piece):
-    return []
+    return ["a3"]
 
 def rook(piece):
     return []
