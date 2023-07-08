@@ -1,6 +1,8 @@
 # Example file showing a circle moving on screen
 import pygame
 from piece import Piece
+import helpers
+from initboard import pieces
 
 def main():
     # pygame setup
@@ -10,17 +12,27 @@ def main():
     clock = pygame.time.Clock()
     running = True
     dt = 0
-
+    selected = None
     board = pygame.Surface((664, 664))
 
     drawBoard(board, screen)
-
-    pieces = drawPieces(screen)
+    drawIndex(screen)
+    drawPieces(screen) 
 
     while running:
         # poll for events
         # pygame.QUIT event means the user clicked X to close your window
         for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONUP:
+                selected = helpers.posToLoc(pygame.mouse.get_pos())
+                if(pieces[selected]==None):
+                    selected = None
+                else:
+                    drawBoard(board, screen)
+                    if(selected):
+                        drawSelected(screen, selected)
+                    drawIndex(screen)
+                    drawPieces(screen)    
             if event.type == pygame.QUIT:
                 running = False
 
@@ -36,38 +48,56 @@ def main():
 
 def drawBoard(board, screen):
 
-    board.fill((227,193,111))
+    board.fill((238,238,210))
 
     for y in range(8):
         if(y%2==1):
             for x in range(0, 8, 2):
-                pygame.draw.rect(board, (184,139,74), (x*83, y*83, 83, 83))
+                pygame.draw.rect(board, (117,150,86), (x*83, y*83, 83, 83))
         else:
             for x in range(0, 8, 2):
-                pygame.draw.rect(board, (184,139,74), ((x+1)*83, y*83, 83, 83))
+                pygame.draw.rect(board, (117,150,86), ((x+1)*83, y*83, 83, 83))
 
     screen.blit(board, (68, 68))
+
+def drawSelected(screen, loc):
+    piece = pieces[loc]
+    x = int(ord(loc[0])) - 97
+    y = int(loc[1]) - 1
+    board = pygame.Surface((83, 83))
+    pygame.draw.rect(board, (187,201,64), (0, 0, 83, 83))
+    screen.blit(board, (68+x*83, 649-y*83))
+
+
+def drawIndex(screen):
 
     font = pygame.font.Font('freesansbold.ttf', 20)
 
     for i in range(8):
-        text = font.render(chr(97+i), True, (255,255,255))
+        text = font.render(chr(97+i), True, (255, 255, 255))
         textRect = text.get_rect()
         textRect.topleft = (54+83*(i+1), 710)
         screen.blit(text, textRect)
-        text = font.render(str(8-i), True, (255,255,255))
+        text = font.render(str(8-i), True, (255, 255, 255))
         textRect = text.get_rect()
         textRect.topleft = (74, 83*(i+1)-8)
         screen.blit(text, textRect)
 
 def drawPieces(screen):
-    pieces = [Piece("w", "r", "a1"), Piece("w", "n", "b1"), Piece("w", "b", "c1"), Piece("w", "q", "d1"), Piece("w", "k", "e1"), Piece("w", "b", "f1"), Piece("w", "n", "g1"), Piece("w", "r", "h1"), Piece("b", "r", "a8"), Piece("b", "n", "b8"), Piece("b", "b", "c8"), Piece("b", "q", "d8"), Piece("b", "k", "e8"), Piece("b", "b", "f8"), Piece("b", "n", "g8"), Piece("b", "r", "h8")]
-    for i in range(8):
-        pieces.append(Piece("w", "p", chr(97+i)+"2"))
-        pieces.append(Piece("b", "p", chr(97+i)+"7"))    
+    pieceList = []
+    for key in pieces:
+        if pieces[key] != None:
+            pieceList.append(pieces[key])
+            pieces[key].draw(screen)
 
-    for piece in pieces:
-        piece.draw(screen)
+
+    # pieces = [Piece("w", "r", "a1"), Piece("w", "n", "b1"), Piece("w", "b", "c1"), Piece("w", "q", "d1"), Piece("w", "k", "e1"), Piece("w", "b", "f1"), Piece("w", "n", "g1"), Piece("w", "r", "h1"), Piece("b", "r", "a8"), Piece("b", "n", "b8"), Piece("b", "b", "c8"), Piece("b", "q", "d8"), Piece("b", "k", "e8"), Piece("b", "b", "f8"), Piece("b", "n", "g8"), Piece("b", "r", "h8")]
+    # for i in range(8):
+    #     pieces.append(Piece("w", "p", chr(97+i)+"2"))
+    #     pieces.append(Piece("b", "p", chr(97+i)+"7"))    
+
+    # for piece in pieces:
+    #     piece.draw(screen)
   
 if __name__=="__main__":
     main()
