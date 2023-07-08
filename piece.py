@@ -2,6 +2,8 @@ import pygame
 import helpers
 from dragOperator import DragOperator
 
+moveCount = 0
+
 class Piece(pygame.sprite.Sprite):
     def __init__(self, color, type, loc):
         super().__init__() 
@@ -10,6 +12,8 @@ class Piece(pygame.sprite.Sprite):
         self.type = type
         self.image = pygame.image.load(f"images/{self.color}{self.type}.png")
         self.validMoves = []
+        self.moved = False
+        self.up2 = False
         self.drag = DragOperator(self)
 
     @property
@@ -32,28 +36,56 @@ class Piece(pygame.sprite.Sprite):
     def update(self, event_list):
         self.drag.update(event_list)
         if not self.drag.dragging:
+
+            # ponds, check if moved up twice and en passant
+            double = None
+            ep = None
+            epCap = None
+            for i in range(len(self.validMoves)):
+                if "up2" in self.validMoves[i]:
+                    double = self.validMoves[i][:2]
+                    self.validMoves[i]=self.validMoves[i][:2]
+                if "ep" in self.validMoves[i]:
+                    ep = self.validMoves[i][:2]
+                    epCap = self.validMoves[i][4:]
+                    self.validMoves[i]=self.validMoves[i][:2]
+                    
             if helpers.posToLoc((self.rect.centerx, self.rect.centery)) in self.validMoves:
                 pieces[self.loc] = None
                 self.loc = helpers.posToLoc((self.rect.centerx, self.rect.centery))
                 pieces[self.loc] = self
-                self.draw(self.surface) 
+                self.draw(self.surface)
+                self.moved = True
+                self.validMoves = []
+
+                global moveCount
+                moveCount+=1
+
+                # ponds
+                if self.loc == double:
+                    self.up2 = True
+                else:
+                    self.up2 = False
+                if self.loc == ep:
+                    pieces[epCap] = None
+                helpers.updatePonds(self, pieces)
             else:
                 self.draw(self.surface)
     
     def findValidMoves(self):
         match self.type:
             case "p":
-                self.validMoves = helpers.pond(self)
+                self.validMoves = helpers.pond(self, pieces)
             case "r":
-                self.validMoves = helpers.rook(self)
+                self.validMoves = helpers.rook(self, pieces)
             case "n":
-                self.validMoves = helpers.knight(self)
+                self.validMoves = helpers.knight(self, pieces)
             case "b":
-                self.validMoves = helpers.bishop(self)
+                self.validMoves = helpers.bishop(self, pieces)
             case "k":
-                self.validMoves = helpers.king(self)
+                self.validMoves = helpers.king(self, pieces)
             case "q":
-                self.validMoves = helpers.queen(self)
+                self.validMoves = helpers.queen(self, pieces)
 
     def __str__(self):
         return f"{self.color}{self.type} at {self.loc}"
