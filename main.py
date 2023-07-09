@@ -1,7 +1,7 @@
 # Example file showing a circle moving on screen
 import pygame
-from piece import Piece
-from piece import pieces
+from piece import Piece, pieces
+import moveCount
 import helpers
 
 def main():
@@ -25,6 +25,13 @@ def main():
 
     group, promote = drawPieces(screen, True)
 
+    wking = ["e1"]
+    bking = pieces["e8"]
+
+    lastCount = moveCount.count
+
+    findAllValidMoves()
+
     while running:
         # poll for events
         # pygame.QUIT event means the user clicked X to close your window
@@ -37,8 +44,8 @@ def main():
                         if(pieces[selected]==None):
                             selected = None 
                             print("selected is none") 
-                        else:
-                            pieces[selected].findValidMoves()
+                        # else:
+                        #     pieces[selected].findValidMoves()
                     elif(selected in promoteLocs):
                         promotePiece = promoteLocs[selected]
                         pieces[promote] = Piece(promotePiece[0], promotePiece[1], promote)
@@ -46,10 +53,16 @@ def main():
                         requirePromotion = False
                         promoteLocs = {}
                         group, promote = drawPieces(screen, True)
+                        findAllValidMoves()
                     
                 
             if event.type == pygame.QUIT:
                 running = False
+        
+        if moveCount.count!=lastCount:
+            print("Turn Number: ", moveCount.count)
+            lastCount = moveCount.count
+            findAllValidMoves()
 
         screen.fill((48,46,43))
         screen.blit(board, (68, 68))
@@ -164,6 +177,11 @@ def drawPromotion(screen, loc):
         screen.blit(image, rect) 
     
     return promoteLocs
-  
+
+def findAllValidMoves():
+    for key in pieces:
+        if pieces[key]:
+            pieces[key].findValidMoves()
+
 if __name__=="__main__":
     main()

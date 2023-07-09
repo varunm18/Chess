@@ -1,8 +1,7 @@
 import pygame
 import helpers
+import moveCount
 from dragOperator import DragOperator
-
-moveCount = 0
 
 class Piece(pygame.sprite.Sprite):
     def __init__(self, color, type, loc):
@@ -13,8 +12,13 @@ class Piece(pygame.sprite.Sprite):
         self.image = pygame.image.load(f"images/{self.color}{self.type}.png")
         self.validMoves = []
         self.moved = False
-        self.up2 = False
         self.drag = DragOperator(self)
+
+        # ponds
+        self.double = None
+        self.up2 = False
+        self.epCap = None
+        self.ep = None
 
     @property
     def image(self):
@@ -38,19 +42,24 @@ class Piece(pygame.sprite.Sprite):
         if not self.drag.dragging:
 
             # ponds, check if moved up twice and en passant
-            double = None
-            ep = None
-            epCap = None
             for i in range(len(self.validMoves)):
                 if "up2" in self.validMoves[i]:
-                    double = self.validMoves[i][:2]
+                    self.double = self.validMoves[i][:2]
                     self.validMoves[i]=self.validMoves[i][:2]
+                elif i==len(self.validMoves)-1 and not self.double:
+                    self.double = None
                 if "ep" in self.validMoves[i]:
-                    ep = self.validMoves[i][:2]
-                    epCap = self.validMoves[i][4:]
+                    self.ep = self.validMoves[i][:2]
+                    self.epCap = self.validMoves[i][4:]
                     self.validMoves[i]=self.validMoves[i][:2]
-                    
+                elif i==len(self.validMoves)-1 and not self.ep:
+                    self.ep = None
+                elif i==len(self.validMoves)-1 and not self.epCap:
+                    self.epCap = None
+
+
             if helpers.posToLoc((self.rect.centerx, self.rect.centery)) in self.validMoves:
+
                 pieces[self.loc] = None
                 self.loc = helpers.posToLoc((self.rect.centerx, self.rect.centery))
                 pieces[self.loc] = self
@@ -58,17 +67,17 @@ class Piece(pygame.sprite.Sprite):
                 self.moved = True
                 self.validMoves = []
 
-                global moveCount
-                moveCount+=1
-
+                
                 # ponds
-                if self.loc == double:
+                if self.loc == self.double:
                     self.up2 = True
                 else:
                     self.up2 = False
-                if self.loc == ep:
-                    pieces[epCap] = None
+                if self.loc == self.ep:
+                    pieces[self.epCap] = None
                 helpers.updatePonds(self, pieces)
+
+                moveCount.count += 1
             else:
                 self.draw(self.surface)
     

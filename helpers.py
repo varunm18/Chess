@@ -40,6 +40,10 @@ def pond(piece, board):
     leftd = f"{chr(int(ord(piece.loc[0]))+offset)}{int(piece.loc[1])+offset}"
     rightd = f"{chr(int(ord(piece.loc[0]))-offset)}{int(piece.loc[1])+offset}"
 
+    p = False
+    if piece.loc in ["c2", "c3", "c4", "c5"]:
+        p = True
+
      # move diagonal, for enpassant or for capturing pieces
     if leftd in board:
         # capture left
@@ -60,6 +64,11 @@ def pond(piece, board):
          # enpassant right
         else:
             checkright = f"{chr(int(ord(piece.loc[0]))-offset)}{int(piece.loc[1])}"
+            # if p:
+                # print("r1")
+                # print(board[checkright])
+                # if board[checkright]:
+                    # print(board[checkright].up2)
             if board[checkright] and board[checkright].color!=col and board[checkright].up2:
                 list.append(rightd+"ep"+checkright)
 
@@ -146,7 +155,21 @@ def bishop(piece, board):
     return list
 
 def king(piece, board):
-    return []
+    list = []
+    # regular movement
+    shift = [-1, 0, 1]
+    for i in shift:
+        for j in shift:
+            if i==0 and j==0:
+                continue
+            move = f"{chr(int(ord(piece.loc[0]))+i)}{int(piece.loc[1])+j}"
+            if move in board:
+                if board[move]==None:
+                    list.append(move)
+                elif board[move].color!=piece.color:
+                    list.append(move)
+    
+    return list
 
 def queen(piece, board):
     list = rook(piece, board)
