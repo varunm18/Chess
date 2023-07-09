@@ -149,4 +149,11 @@ def king(piece, board):
     return []
 
 def queen(piece, board):
-    return []
+    list = rook(piece, board)
+    bishopeMoves = bishop(piece, board)
+
+    for move in bishopeMoves:
+        if move not in list:
+            list.append(move)
+    
+    return list
