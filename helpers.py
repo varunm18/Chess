@@ -69,7 +69,36 @@ def rook(piece, board):
     return []
 
 def knight(piece, board):
-    return []
+    list = []
+    col = piece.color
+
+    leftup = f"{chr(int(ord(piece.loc[0]))+1)}{int(piece.loc[1])+1}ru"
+    rightup = f"{chr(int(ord(piece.loc[0]))-1)}{int(piece.loc[1])+1}lu"
+    leftdown = f"{chr(int(ord(piece.loc[0]))+1)}{int(piece.loc[1])-1}rd"
+    rightdown = f"{chr(int(ord(piece.loc[0]))-1)}{int(piece.loc[1])-1}ld"
+    possible = [leftup, rightup, leftdown, rightdown]
+
+    for move in possible:
+        for i in range(2):
+            action = move[2+i:3+i]
+            match action:
+                case "l":
+                    square = f"{chr(int(ord(move[0]))-1)}{int(move[1])}"
+                case "u":
+                    square = f"{chr(int(ord(move[0])))}{int(move[1])+1}"
+                case "r":
+                    square = f"{chr(int(ord(move[0]))+1)}{int(move[1])}"
+                case "d":
+                    square = f"{chr(int(ord(move[0])))}{int(move[1])-1}"
+            if square in board:
+                if board[square]:
+                    if board[square].color!=col:
+                        list.append(square)
+                else:
+                    list.append(square)
+
+    return list
+
 
 def bishop(piece, board):
     return []
