@@ -66,7 +66,28 @@ def pond(piece, board):
     return list
 
 def rook(piece, board):
-    return []
+    list = []
+    for i in range(4):
+        for j in range(8):
+            if i==0:
+                move = f"{chr(int(ord(piece.loc[0]))+(j+1))}{int(piece.loc[1])}"
+            elif i==1:
+                move = f"{chr(int(ord(piece.loc[0]))-(j+1))}{int(piece.loc[1])}"
+            elif i==2:
+                move = f"{chr(int(ord(piece.loc[0])))}{int(piece.loc[1])+(j+1)}"
+            elif i==3:
+                move = f"{chr(int(ord(piece.loc[0])))}{int(piece.loc[1])-(j+1)}"
+            if move not in board:
+                break
+            if board[move]==None:
+                list.append(move)
+            elif board[move].color!=piece.color:
+                list.append(move)
+                break
+            else:
+                break
+
+    return list
 
 def knight(piece, board):
     list = []
