@@ -1,6 +1,6 @@
 # Example file showing a circle moving on screen
 import pygame
-from piece import Piece, pieces
+from piece import Piece, pieces, attackers
 import moveCount
 import helpers
 
@@ -25,12 +25,12 @@ def main():
 
     group, promote = drawPieces(screen, True)
 
-    wking = ["e1"]
+    wking = pieces["e1"]
     bking = pieces["e8"]
 
     lastCount = moveCount.count
 
-    findAllValidMoves()
+    findAttackers()
 
     while running:
         # poll for events
@@ -44,8 +44,8 @@ def main():
                         if(pieces[selected]==None):
                             selected = None 
                             print("selected is none") 
-                        # else:
-                        #     pieces[selected].findValidMoves()
+                        else:
+                            pieces[selected].findValidMoves()
                     elif(selected in promoteLocs):
                         promotePiece = promoteLocs[selected]
                         pieces[promote] = Piece(promotePiece[0], promotePiece[1], promote)
@@ -53,16 +53,12 @@ def main():
                         requirePromotion = False
                         promoteLocs = {}
                         group, promote = drawPieces(screen, True)
-                        findAllValidMoves()
+                        findAttackers()
+                        wking.checkForChecks()
+                        bking.checkForChecks()
                     
-                
             if event.type == pygame.QUIT:
                 running = False
-        
-        if moveCount.count!=lastCount:
-            print("Turn Number: ", moveCount.count)
-            lastCount = moveCount.count
-            findAllValidMoves()
 
         screen.fill((48,46,43))
         screen.blit(board, (68, 68))
@@ -78,6 +74,13 @@ def main():
         if promote:
             requirePromotion = True
             promoteLocs = drawPromotion(screen, promote)
+        
+        if moveCount.count!=lastCount:
+            print("Turn Number: ", moveCount.count)
+            lastCount = moveCount.count
+            findAttackers()
+            wking.checkForChecks()
+            bking.checkForChecks()
         # flip() the display to put your work on screen
         pygame.display.flip()
 
@@ -178,10 +181,40 @@ def drawPromotion(screen, loc):
     
     return promoteLocs
 
-def findAllValidMoves():
+def findAttackers():
+    whiteAttack = []
+    blackAttack = []
     for key in pieces:
         if pieces[key]:
-            pieces[key].findValidMoves()
+            match pieces[key].type:
+                case "p":
+                    moves = helpers.pond(pieces[key], pieces, True)
+                case "r":
+                    moves = helpers.rook(pieces[key], pieces, True)
+                case "n":
+                    moves = helpers.knight(pieces[key], pieces, True)
+                case "b":
+                    moves = helpers.bishop(pieces[key], pieces, True)
+                case "k":
+                    moves = helpers.king(pieces[key], pieces, attackers, True)
+                case "q":
+                    moves = helpers.queen(pieces[key], pieces, True)
+
+            for move in moves:
+                if pieces[key].color == "w":
+                    if move not in whiteAttack:
+                        whiteAttack.append(move)
+                if pieces[key].color == "b":
+                    if move not in blackAttack:
+                        blackAttack.append(move)
+    attackers["w"] = whiteAttack
+    attackers["b"] = blackAttack
+
+# def temp(screen, whiteAttack, blackAttack):
+#     for move in whiteAttack:
+#         pygame.draw.circle(screen, (255, 255, 255), helpers.locToPos(move), 15)
+#     for move in blackAttack:
+#         pygame.draw.circle(screen, (10, 21, 100), helpers.locToPos(move), 15)
 
 if __name__=="__main__":
     main()

@@ -13,12 +13,12 @@ class Piece(pygame.sprite.Sprite):
         self.validMoves = []
         self.moved = False
         self.drag = DragOperator(self)
-
+    
         # ponds
-        self.double = None
         self.up2 = False
-        self.epCap = None
-        self.ep = None
+
+        # kings
+        self.check = False
 
     @property
     def image(self):
@@ -41,22 +41,30 @@ class Piece(pygame.sprite.Sprite):
         self.drag.update(event_list)
         if not self.drag.dragging:
 
+            double = None
+            epCap = None
+            ep = None
+
             # ponds, check if moved up twice and en passant
             for i in range(len(self.validMoves)):
                 if "up2" in self.validMoves[i]:
-                    self.double = self.validMoves[i][:2]
+                    double = self.validMoves[i][:2]
                     self.validMoves[i]=self.validMoves[i][:2]
-                elif i==len(self.validMoves)-1 and not self.double:
-                    self.double = None
                 if "ep" in self.validMoves[i]:
-                    self.ep = self.validMoves[i][:2]
-                    self.epCap = self.validMoves[i][4:]
+                    ep = self.validMoves[i][:2]
+                    epCap = self.validMoves[i][4:]
                     self.validMoves[i]=self.validMoves[i][:2]
-                elif i==len(self.validMoves)-1 and not self.ep:
-                    self.ep = None
-                elif i==len(self.validMoves)-1 and not self.epCap:
-                    self.epCap = None
-
+            
+            castle = None
+            start = None
+            end = None
+            # kings, check for castle
+            for i in range(len(self.validMoves)):
+                if "00" in self.validMoves[i]:
+                    castle = self.validMoves[i][:2]
+                    start = self.validMoves[i][4:6]
+                    end = self.validMoves[i][6:]
+                    self.validMoves[i]=self.validMoves[i][:2]
 
             if helpers.posToLoc((self.rect.centerx, self.rect.centery)) in self.validMoves:
 
@@ -67,38 +75,54 @@ class Piece(pygame.sprite.Sprite):
                 self.moved = True
                 self.validMoves = []
 
-                
                 # ponds
-                if self.loc == self.double:
+                if self.loc == double:
                     self.up2 = True
                 else:
                     self.up2 = False
-                if self.loc == self.ep:
-                    pieces[self.epCap] = None
+                if self.loc == ep:
+                    pieces[epCap] = None
                 helpers.updatePonds(self, pieces)
 
+                # kings
+                if self.loc == castle:
+                    print(pieces[end])
+                    pieces[start].loc = end
+                    pieces[end] = pieces[start]
+                    print(pieces[end])
+                    pieces[start] = None
+
                 moveCount.count += 1
+            
             else:
                 self.draw(self.surface)
     
     def findValidMoves(self):
         match self.type:
             case "p":
-                self.validMoves = helpers.pond(self, pieces)
+                self.validMoves = helpers.pond(self, pieces, False)
             case "r":
-                self.validMoves = helpers.rook(self, pieces)
+                self.validMoves = helpers.rook(self, pieces, False)
             case "n":
-                self.validMoves = helpers.knight(self, pieces)
+                self.validMoves = helpers.knight(self, pieces, False)
             case "b":
-                self.validMoves = helpers.bishop(self, pieces)
+                self.validMoves = helpers.bishop(self, pieces, False)
             case "k":
-                self.validMoves = helpers.king(self, pieces)
+                self.validMoves = helpers.king(self, pieces, attackers, False)
             case "q":
-                self.validMoves = helpers.queen(self, pieces)
+                self.validMoves = helpers.queen(self, pieces, False)
+    
+    # kings
+    def checkForChecks(self):
+        self.check = helpers.checkChecks(self, attackers)
 
     def __str__(self):
         return f"{self.color}{self.type} at {self.loc}"
 
+attackers = {
+    "w" : None,
+    "b" : None
+}
 
 pieces = {
     "a1" : Piece("w", "r", "a1"),
