@@ -3,6 +3,23 @@ import helpers
 import moveCount
 from dragOperator import DragOperator
 
+class TakenPiece():
+    def __init__(self, color, type):
+        super().__init__() 
+        self.color = color
+        self.type = type
+        self.value = helpers.pieceValue(self.type)
+        self.image = pygame.image.load(f"images/{self.color}{self.type}.png")
+
+    @property
+    def image(self):
+        return self._image
+    
+    @image.setter
+    def image(self, img):
+        image = pygame.transform.scale(img, (30, 30))
+        self._image = image
+
 class Piece(pygame.sprite.Sprite):
     def __init__(self, color, type, loc):
         super().__init__() 
@@ -70,6 +87,8 @@ class Piece(pygame.sprite.Sprite):
 
                 pieces[self.loc] = None
                 self.loc = helpers.posToLoc((self.rect.centerx, self.rect.centery))
+                if(pieces[self.loc]):
+                    taken[self.color].append(TakenPiece(pieces[self.loc].color, pieces[self.loc].type))
                 pieces[self.loc] = self
                 self.draw(self.surface)
                 self.moved = True
@@ -81,6 +100,7 @@ class Piece(pygame.sprite.Sprite):
                 else:
                     self.up2 = False
                 if self.loc == ep:
+                    taken[self.color].append(TakenPiece(pieces[epCap].color, pieces[epCap].type))
                     pieces[epCap] = None
                 helpers.updatePonds(self, pieces)
 
@@ -118,6 +138,11 @@ class Piece(pygame.sprite.Sprite):
 
     def __str__(self):
         return f"{self.color}{self.type} at {self.loc}"
+
+taken = {
+    "w" : [],
+    "b" : []
+}
 
 attackers = {
     "w" : None,

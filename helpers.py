@@ -251,3 +251,18 @@ def queen(piece, board, attack):
             list.append(move)
     
     return list
+
+def pieceValue(type):
+    match type:
+        case "p":
+            return 1
+        case "r":
+            return 5
+        case "n":
+            return 3
+        case "b":
+            return 3
+        case "q":
+            return 9
+        case _:
+            return 0 

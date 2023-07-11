@@ -1,8 +1,9 @@
 # Example file showing a circle moving on screen
 import pygame
-from piece import Piece, pieces, attackers
+from piece import Piece, pieces, attackers, taken
 import moveCount
 import helpers
+from roundedRect import AAfilledRoundedRect
 
 def main():
     # pygame setup
@@ -29,6 +30,7 @@ def main():
     bking = pieces["e8"]
 
     lastCount = moveCount.count
+    wMove = True
 
     findAttackers()
 
@@ -44,8 +46,16 @@ def main():
                         if(pieces[selected]==None):
                             selected = None 
                             print("selected is none") 
-                        else:
+                        elif(wMove and pieces[selected].color=="w"):
                             pieces[selected].findValidMoves()
+                            for key in pieces:
+                                if pieces[key] and pieces[key].color==pieces[selected].color and key!=selected:
+                                    pieces[key].validMoves = []
+                        elif(not wMove and pieces[selected].color=="b"):
+                            pieces[selected].findValidMoves()
+                            for key in pieces:
+                                if pieces[key] and pieces[key].color==pieces[selected].color and key!=selected:
+                                    pieces[key].validMoves = []
                     elif(selected in promoteLocs):
                         promotePiece = promoteLocs[selected]
                         pieces[promote] = Piece(promotePiece[0], promotePiece[1], promote)
@@ -78,6 +88,7 @@ def main():
         if moveCount.count!=lastCount:
             print("Turn Number: ", moveCount.count)
             lastCount = moveCount.count
+            wMove = not wMove
             findAttackers()
             wking.checkForChecks()
             bking.checkForChecks()
@@ -121,14 +132,86 @@ def drawIndex(screen):
     font = pygame.font.Font('freesansbold.ttf', 20)
 
     for i in range(8):
-        text = font.render(chr(97+i), True, (255, 255, 255))
+        if i%2==0:
+            color = (238,238,210)
+        else:
+            color = (117,150,86)
+        text = font.render(chr(97+i), True, color)
         textRect = text.get_rect()
         textRect.topleft = (54+83*(i+1), 710)
         screen.blit(text, textRect)
-        text = font.render(str(8-i), True, (255, 255, 255))
+        if i%2==1:
+            color = (238,238,210)
+        else:
+            color = (117,150,86)
+        text = font.render(str(8-i), True, color)
         textRect = text.get_rect()
         textRect.topleft = (74, 83*(i+1)-8)
         screen.blit(text, textRect)
+
+    count1 = 0
+    count2 = 0
+
+    for key in taken:
+        for item in taken[key]:
+            if key=="w":
+                count1+=helpers.pieceValue(item.type)
+            else:
+                count2+=helpers.pieceValue(item.type)
+
+    if (len(taken["b"])==0 and len(taken["w"])==0) or count1==count2:
+        start = False
+    else:
+        start = True
+    
+    bCount = False
+    if count2 > count1:
+        bCount = True
+    
+    print(f"{count1}, {count2}")
+
+    for i in range(2):
+        color = "Black"
+        text = font.render(color, True, (0,0,0))
+        if i==1:
+            color = "White"
+            text = font.render(color, True, (255,255,255))
+
+        list = taken[color[:1].lower()]
+        count = len(list)
+        if color=="Black":
+            if not start:
+                bCount = 0
+            AAfilledRoundedRect(screen, (62, 10, max(70, (count+bCount)*32)+4, 52), (238,238,210), 0.5) 
+        elif color=="White":
+            if not start:
+                bCount = 1
+            AAfilledRoundedRect(screen, (62, 742, max(70, (count+(not bCount))*32)+4, 52), (117,150,86), 0.5)
+
+        textRect = text.get_rect()
+        textRect.topleft = (68, 14+i*732)
+        screen.blit(text, textRect)
+
+        for j in range(len(list)):
+            x, y = 68+j*30, 32+i*732
+            rect = list[j].image.get_rect()
+            rect.topleft = (x, y)
+            screen.blit(list[j].image, rect) 
+
+        if start:
+
+            if bCount and color=="Black":
+                text = font.render(f"+{count2-count1}", True, (0,0,0))
+                textRect = text.get_rect()
+                textRect.topleft = (len(taken["b"])*30+68, 38)
+                screen.blit(text, textRect)
+
+            elif not bCount and color=="White":
+                text = font.render(f"+{count1-count2}", True, (255,255,255))
+                textRect = text.get_rect()
+                textRect.topleft = (len(taken["w"])*30+68, 770)
+                screen.blit(text, textRect)
+
 
 def drawPieces(screen, init):
     group = pygame.sprite.Group()
