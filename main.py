@@ -4,6 +4,7 @@ from piece import Piece, pieces, attackers, taken
 import moveCount
 import helpers
 from roundedRect import AAfilledRoundedRect
+from datetime import timedelta
 
 def main():
     # pygame setup
@@ -21,8 +22,10 @@ def main():
     requirePromotion = False
     promoteLocs = {}
 
+    times = [600, 600]
+
     board = drawBoard(board)
-    drawIndex(screen)
+    drawIndex(screen, times)
 
     group, promote = drawPieces(screen, True)
 
@@ -32,9 +35,15 @@ def main():
     lastCount = moveCount.count
     wMove = True
 
+
     findAttackers()
 
     while running:
+
+        ticks=pygame.time.get_ticks()
+        # millis=ticks%1000
+        # print(millis)
+
         # poll for events
         # pygame.QUIT event means the user clicked X to close your window
         eventList = pygame.event.get()
@@ -70,21 +79,15 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
 
-        screen.fill((48,46,43))
-        screen.blit(board, (68, 68))
-        if(selected and pieces[selected]):
-            drawSelected(screen, selected)
-        else:
-            selected = None
-        drawIndex(screen)
-        group, promote = drawPieces(screen, False) 
-        group.update(eventList)
-        group.draw(screen)
-
         if promote:
             requirePromotion = True
             promoteLocs = drawPromotion(screen, promote)
         
+        if wMove:
+            times[1] = round(1200 - (ticks/1000) - times[0])
+        else:
+            times[0] = round(1200 - (ticks/1000) - times[1])
+            
         if moveCount.count!=lastCount:
             print("Turn Number: ", moveCount.count)
             lastCount = moveCount.count
@@ -92,6 +95,18 @@ def main():
             findAttackers()
             wking.checkForChecks()
             bking.checkForChecks()
+
+        screen.fill((48,46,43))
+        screen.blit(board, (68, 68))
+        if(selected and pieces[selected]):
+            drawSelected(screen, selected)
+        else:
+            selected = None
+        drawIndex(screen, times)
+        group, promote = drawPieces(screen, False) 
+        group.update(eventList)
+        group.draw(screen)
+
         # flip() the display to put your work on screen
         pygame.display.flip()
 
@@ -127,9 +142,33 @@ def drawSelected(screen, loc):
     for move in piece.validMoves:
         pygame.draw.circle(screen, (0,0,0), helpers.locToPos(move), 15)
 
-def drawIndex(screen):
+def drawIndex(screen, times):
 
-    font = pygame.font.Font('freesansbold.ttf', 20)
+    font = pygame.font.Font('freesansbold.ttf', 25)
+
+    for i in range(len(times)):
+        if times[i]<600:
+            time=timedelta(seconds=times[i])
+            time=str(time)[3:]
+        else:
+            time="10:00"
+
+        rect = pygame.Rect(0,0,100,52)
+        rect.topright = (732, 10+i*732)
+        
+        if moveCount.count%2==1 and i==0 or moveCount.count%2==0 and i==1:
+            AAfilledRoundedRect(screen, rect, (255,255,255), 0.5)
+            color = (0,0,0)
+        else:
+            AAfilledRoundedRect(screen, rect, (0,0,0), 0.5)
+            color = (152,151,150)
+
+        text = font.render(time, True, color)
+        textRect = text.get_rect()
+        textRect.center = rect.center
+        screen.blit(text, textRect)
+
+    font = pygame.font.Font('freesansbold.ttf', 20)    
 
     for i in range(8):
         if i%2==0:
@@ -167,8 +206,6 @@ def drawIndex(screen):
     bCount = False
     if count2 > count1:
         bCount = True
-    
-    print(f"{count1}, {count2}")
 
     for i in range(2):
         color = "Black"
