@@ -1,3 +1,5 @@
+from copy import copy
+
 # relative to screen
 def locToPos(loc):
     file = int(ord(loc[0])) - 96
@@ -19,7 +21,7 @@ def updatePonds(piece, board):
             if board[item].up2:
                 board[item].up2 = False
 
-def pond(piece, board, attack):
+def pond(piece, board, attack, val=False):
     list = []
     offset = 1
     col = piece.color
@@ -69,9 +71,12 @@ def pond(piece, board, attack):
             if board[checkright] and board[checkright].color!=col and board[checkright].up2:
                 list.append(rightd+"ep"+checkright)
 
-    return list
+    if attack:
+        return list
+    else:
+        return validate(piece, list, board)
 
-def rook(piece, board, attack):
+def rook(piece, board, attack, val=False):
     list = []
     for i in range(4):
         for j in range(8):
@@ -98,9 +103,12 @@ def rook(piece, board, attack):
             else:
                 break
 
-    return list
+    if attack:
+        return list
+    else:
+        return validate(piece, list, board)
 
-def knight(piece, board, attack):
+def knight(piece, board, attack, val=False):
     list = []
     col = piece.color
 
@@ -131,10 +139,13 @@ def knight(piece, board, attack):
                     elif(attack):
                         list.append(square)
 
-    return list
+    if attack:
+        return list
+    else:
+        return validate(piece, list, board)
 
 
-def bishop(piece, board, attack):
+def bishop(piece, board, attack, val=False):
     list = []
     for i in range(4):
         for j in range(8):
@@ -161,9 +172,12 @@ def bishop(piece, board, attack):
             else:
                 break
 
-    return list
+    if attack:
+        return list
+    else:
+        return validate(piece, list, board)
 
-def king(piece, board, attackers, attack):
+def king(piece, board, attackers, attack, val=False):
     list = []
     # regular movement
     shift = [-1, 0, 1]
@@ -223,9 +237,13 @@ def king(piece, board, attackers, attack):
     if right:
         list.append(f"g{rank}00h{rank}f{rank}")
 
-    return list
+    if attack:
+        return list
+    else:
+        return validate(piece, list, board)
 
-def checkChecks(piece, attackers):
+# Given a piece, and list of squares being attacked, returns if piece is in check
+def checkChecks(piece, attackers, val=False):
     col = piece.color
     set = "w"
     if col=="w":
@@ -242,7 +260,7 @@ def checkChecks(piece, attackers):
     print()
     return False
 
-def queen(piece, board, attack):
+def queen(piece, board, attack, val=False):
     list = rook(piece, board, attack)
     bishopeMoves = bishop(piece, board, attack)
 
@@ -266,3 +284,127 @@ def pieceValue(type):
             return 9
         case _:
             return 0 
+
+# given the current board, current piece, un-validated move list, returns valid move list
+def validate(piece, m, board):
+
+    moves = m.copy()
+
+    result = []
+    print(piece.loc)
+
+    newBoard = {}
+    newPiece = CheckPiece(piece.color, piece.type, piece.loc)
+    for item in board:
+        if board[item]:
+            newBoard[item] = CheckPiece(board[item].color, board[item].type, board[item].loc)
+        else:
+            newBoard[item] = None
+
+    for move in moves:
+
+        # ponds
+        double = None
+        epCap = None
+        ep = None
+
+        # king
+        castle = None
+        start = None
+        end = None
+
+        if "up2" in move:
+            double = move[:2]
+            move=move[:2]
+        if "ep" in move:
+            ep = moves[:2]
+            epCap = move[4:]
+            move=move[:2]
+        
+        # kings, check for castle
+        if "00" in move:
+            castle = move[:2]
+            start = move[4:6]
+            end = move[6:]
+            move=move[:2]
+
+        newBoard[newPiece.loc] = None
+        newPiece.loc = move
+        newBoard[newPiece.loc] = newPiece
+        newPiece.moved = True
+        newPiece.validMoves = []
+
+        # ponds
+        if newPiece.loc == double:
+            newPiece.up2 = True
+        else:
+            newPiece.up2 = False
+        if newPiece.loc == ep:
+            newBoard[epCap] = None
+        updatePonds(newPiece, newBoard)
+
+        # kings
+        if newPiece.loc == castle:
+            newBoard[start].loc = end
+            newBoard[end] = newBoard[start]
+            newBoard[start] = None
+        
+        whiteAttack = []
+        blackAttack = []
+        newAttackers = {
+            "a":None,
+            "b":None
+        }
+
+        kingPiece = None
+
+        for key in newBoard:
+            if newBoard[key] and newBoard[key].color==newPiece.color and newBoard[key].type=="k":
+                kingPiece = newBoard[key]
+
+        for key in newBoard:
+            if newBoard[key]:
+                match newBoard[key].type:
+                    case "p":
+                        actions = pond(newBoard[key], newBoard, True)
+                    case "r":
+                        actions = rook(newBoard[key], newBoard, True)
+                    case "n":
+                        actions = knight(newBoard[key], newBoard, True)
+                    case "b":
+                        actions = bishop(newBoard[key], newBoard, True)
+                    case "k":
+                        actions = king(newBoard[key], newBoard, [], True)
+                    case "q":
+                        actions = queen(newBoard[key], newBoard, True)
+
+                for action in actions:
+                    if newBoard[key].color == "w":
+                        if action not in whiteAttack:
+                            whiteAttack.append(action)
+                    if newBoard[key].color == "b":
+                        if action not in blackAttack:
+                            blackAttack.append(action)
+        newAttackers["w"] = whiteAttack
+        newAttackers["b"] = blackAttack
+        if not checkChecks(kingPiece, newAttackers, True):
+            if double:
+                result.append(f"{move}up2")
+            elif ep:
+                result.append(f"{move}ep{epCap}")
+            elif castle:
+                result.append(f"{move}00{start}{end}")
+            else:
+                result.append(move)
+    return result
+
+class CheckPiece():
+    def __init__(self, color, type, loc):
+        super().__init__() 
+        self.color = color
+        self.type = type
+        self.loc = loc
+        self.moved = False
+        self.validMoves = []
+        self.up2 = False
+        self.check = False

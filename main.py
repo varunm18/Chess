@@ -5,16 +5,80 @@ import moveCount
 import helpers
 from roundedRect import AAfilledRoundedRect
 from datetime import timedelta
+import pygame_widgets
+from pygame_widgets.button import Button, ButtonArray
+
+def playAI():
+    return None
 
 def main():
-    # pygame setup
     pygame.init()
     screen = pygame.display.set_mode((800, 800))
     pygame.display.set_caption("Chess")
-    clock = pygame.time.Clock()
-    running = True
-    dt = 0
+
+    button = Button(
+        # Mandatory Parameters
+        screen,  # Surface to place button on
+        250,  # X-coordinate of top left corner
+        180,  # Y-coordinate of top left corner
+        300,  # Width
+        80,  # Height
+
+        # Optional Parameters
+        text='Local Game',  # Text to display
+        fontSize=50,  # Size of font
+        margin=20,  # Minimum distance between text/image and edge of button
+        inactiveColour=(117,150,86),  # Colour of button when not being interacted with
+        hoverColour=(125,166,79),  # Colour of button when being hovered over
+        pressedColour=(128,182,76),  # Colour of button when being clicked
+        radius=20,  # Radius of border corners (leave empty for not curved)
+        onClick=lambda: playLocal() # Function to call when clicked on
+    )
+
+    button2 = Button(
+        # Mandatory Parameters
+        screen,  # Surface to place button on
+        250,  # X-coordinate of top left corner
+        350,  # Y-coordinate of top left corner
+        300,  # Width
+        80,  # Height
+
+        # Optional Parameters
+        text='AI Game',  # Text to display
+        fontSize=50,  # Size of font
+        margin=20,  # Minimum distance between text/image and edge of button
+        inactiveColour=(117,150,86),  # Colour of button when not being interacted with
+        hoverColour=(125,166,79),  # Colour of button when being hovered over
+        pressedColour=(128,182,76),  # Colour of button when being clicked
+        radius=20,  # Radius of border corners (leave empty for not curved)
+        onClick=lambda: playAI() # Function to call when clicked on
+    )
+
+    while True:
+        screen.fill((48,46,43))
+        eventList = pygame.event.get()
+        for event in eventList: 
+            if event.type == pygame.QUIT:
+                pygame.quit()
+
+        pygame_widgets.update(eventList)
+
+        # flip() the display to put your work on screen
+        pygame.display.flip()
+
+        # limits FPS to 60
+        # dt is delta time in seconds since last frame, used for framerate-
+        # independent physics.
+
+def playLocal():
+    pygame.quit()
+    pygame.init()
+    # initialTime = pygame.time.get_ticks()/1000
+    screen = pygame.display.set_mode((800, 800))
+    pygame.display.set_caption("Local Chess Game")
+    
     board = pygame.Surface((664, 664))
+    running = True
 
     selected = None
 
@@ -56,15 +120,11 @@ def main():
                             selected = None 
                             print("selected is none") 
                         elif(wMove and pieces[selected].color=="w"):
-                            pieces[selected].findValidMoves()
-                            for key in pieces:
-                                if pieces[key] and pieces[key].color==pieces[selected].color and key!=selected:
-                                    pieces[key].validMoves = []
+                            if len(pieces[selected].validMoves)==0:
+                                pieces[selected].findValidMoves()
                         elif(not wMove and pieces[selected].color=="b"):
-                            pieces[selected].findValidMoves()
-                            for key in pieces:
-                                if pieces[key] and pieces[key].color==pieces[selected].color and key!=selected:
-                                    pieces[key].validMoves = []
+                            if len(pieces[selected].validMoves)==0:
+                                pieces[selected].findValidMoves()
                     elif(selected in promoteLocs):
                         promotePiece = promoteLocs[selected]
                         pieces[promote] = Piece(promotePiece[0], promotePiece[1], promote)
@@ -78,16 +138,12 @@ def main():
                     
             if event.type == pygame.QUIT:
                 running = False
-
-        if promote:
-            requirePromotion = True
-            promoteLocs = drawPromotion(screen, promote)
         
         if wMove:
             times[1] = round(1200 - (ticks/1000) - times[0])
         else:
             times[0] = round(1200 - (ticks/1000) - times[1])
-            
+
         if moveCount.count!=lastCount:
             print("Turn Number: ", moveCount.count)
             lastCount = moveCount.count
@@ -107,13 +163,17 @@ def main():
         group.update(eventList)
         group.draw(screen)
 
+        if promote:
+            requirePromotion = True
+            promoteLocs = drawPromotion(screen, promote)
+
         # flip() the display to put your work on screen
         pygame.display.flip()
 
         # limits FPS to 60
         # dt is delta time in seconds since last frame, used for framerate-
         # independent physics.
-        dt = clock.tick(60) / 1000
+        # dt = clock.tick(60) / 1000
 
     pygame.quit()
 

@@ -58,12 +58,18 @@ class Piece(pygame.sprite.Sprite):
         self.drag.update(event_list)
         if not self.drag.dragging:
 
+            # ponds
             double = None
             epCap = None
             ep = None
 
-            # ponds, check if moved up twice and en passant
+            # king
+            castle = None
+            start = None
+            end = None
+
             for i in range(len(self.validMoves)):
+                # ponds, check if moved up twice and en passant
                 if "up2" in self.validMoves[i]:
                     double = self.validMoves[i][:2]
                     self.validMoves[i]=self.validMoves[i][:2]
@@ -71,12 +77,8 @@ class Piece(pygame.sprite.Sprite):
                     ep = self.validMoves[i][:2]
                     epCap = self.validMoves[i][4:]
                     self.validMoves[i]=self.validMoves[i][:2]
-            
-            castle = None
-            start = None
-            end = None
-            # kings, check for castle
-            for i in range(len(self.validMoves)):
+                
+                # kings, check for castle
                 if "00" in self.validMoves[i]:
                     castle = self.validMoves[i][:2]
                     start = self.validMoves[i][4:6]
@@ -111,6 +113,11 @@ class Piece(pygame.sprite.Sprite):
                     pieces[end] = pieces[start]
                     print(pieces[end])
                     pieces[start] = None
+                
+                #  reset all
+                for key in pieces:
+                    if pieces[key] and pieces[key].color==self.color:
+                        pieces[key].validMoves = []
 
                 moveCount.count += 1
             
