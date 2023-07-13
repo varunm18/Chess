@@ -6,7 +6,9 @@ import helpers
 from roundedRect import AAfilledRoundedRect
 from datetime import timedelta
 import pygame_widgets
-from pygame_widgets.button import Button, ButtonArray
+from pygame_widgets.button import Button
+from pygame_widgets.slider import Slider
+from pygame_widgets.textbox import TextBox
 
 def playAI():
     return None
@@ -15,6 +17,10 @@ def main():
     pygame.init()
     screen = pygame.display.set_mode((800, 800))
     pygame.display.set_caption("Chess")
+    # (238,238,210)
+    slider = Slider(screen, 250, 520, 300, 50, min=1, max=59, handleColour=(117,150,86), step=1)
+    output = TextBox(screen, 315, 600, 170, 80, fontSize=50, colour=(117,150,86), textColour=(0,0,0), radius=5)
+    output.disable()
 
     button = Button(
         # Mandatory Parameters
@@ -32,7 +38,7 @@ def main():
         hoverColour=(125,166,79),  # Colour of button when being hovered over
         pressedColour=(128,182,76),  # Colour of button when being clicked
         radius=20,  # Radius of border corners (leave empty for not curved)
-        onClick=lambda: playLocal() # Function to call when clicked on
+        onClick=lambda: playLocal(time) # Function to call when clicked on
     )
 
     button2 = Button(
@@ -55,11 +61,15 @@ def main():
     )
 
     while True:
-        screen.fill((48,46,43))
         eventList = pygame.event.get()
         for event in eventList: 
             if event.type == pygame.QUIT:
                 pygame.quit()
+
+        screen.fill((48,46,43))
+
+        time = slider.getValue()
+        output.setText(f"Time: {time}")
 
         pygame_widgets.update(eventList)
 
@@ -70,7 +80,7 @@ def main():
         # dt is delta time in seconds since last frame, used for framerate-
         # independent physics.
 
-def playLocal():
+def playLocal(time):
     pygame.quit()
     pygame.init()
     # initialTime = pygame.time.get_ticks()/1000
@@ -86,7 +96,7 @@ def playLocal():
     requirePromotion = False
     promoteLocs = {}
 
-    times = [600, 600]
+    times = [time*60, time*60]
 
     board = drawBoard(board)
     drawIndex(screen, times)
@@ -140,9 +150,9 @@ def playLocal():
                 running = False
         
         if wMove:
-            times[1] = round(1200 - (ticks/1000) - times[0])
+            times[1] = round(time*120 - (ticks/1000) - times[0])
         else:
-            times[0] = round(1200 - (ticks/1000) - times[1])
+            times[0] = round(time*120 - (ticks/1000) - times[1])
 
         if moveCount.count!=lastCount:
             print("Turn Number: ", moveCount.count)
@@ -211,7 +221,9 @@ def drawIndex(screen, times):
             time=timedelta(seconds=times[i])
             time=str(time)[3:]
         else:
-            time="10:00"
+            time=timedelta(seconds=times[i])
+            print(time)
+            time=str(time)[2:]
 
         rect = pygame.Rect(0,0,100,52)
         rect.topright = (732, 10+i*732)
