@@ -88,7 +88,12 @@ class Piece(pygame.sprite.Sprite):
             if helpers.posToLoc((self.rect.centerx, self.rect.centery)) in self.validMoves:
 
                 pieces[self.loc] = None
-                self.loc = helpers.posToLoc((self.rect.centerx, self.rect.centery))
+                location = helpers.posToLoc((self.rect.centerx, self.rect.centery))
+                if not(self.type=="p" and (self.loc[1]=="8" or self.loc[1]=="1")):
+                    moveList.append(f"{self.loc}{location}")
+                else:
+                    moveList.append(f"{self.loc}{location}")
+                self.loc = location
                 if(pieces[self.loc]):
                     taken[self.color].append(TakenPiece(pieces[self.loc].color, pieces[self.loc].type))
                 pieces[self.loc] = self
@@ -119,7 +124,8 @@ class Piece(pygame.sprite.Sprite):
                     if pieces[key] and pieces[key].color==self.color:
                         pieces[key].validMoves = []
 
-                moveCount.count += 1
+                if not(self.type=="p" and (self.loc[1]=="8" or self.loc[1]=="1")):
+                    moveCount.count += 1
             
             else:
                 self.draw(self.surface)
@@ -155,6 +161,8 @@ attackers = {
     "w" : None,
     "b" : None
 }
+
+moveList = []
 
 pieces = {
     "a1" : Piece("w", "r", "a1"),

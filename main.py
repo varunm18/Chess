@@ -1,7 +1,8 @@
 # Example file showing a circle moving on screen
 import pygame
-from piece import Piece, pieces, attackers, taken
+from piece import Piece, TakenPiece, pieces, attackers, taken, moveList
 import moveCount
+from moveCount import stockFish
 import helpers
 from roundedRect import AAfilledRoundedRect
 from datetime import timedelta
@@ -9,24 +10,26 @@ import pygame_widgets
 from pygame_widgets.button import Button
 from pygame_widgets.slider import Slider
 from pygame_widgets.textbox import TextBox
-
-def playAI():
-    return None
+from stockfish import Stockfish
 
 def main():
     pygame.init()
     screen = pygame.display.set_mode((800, 800))
     pygame.display.set_caption("Chess")
     # (238,238,210)
-    slider = Slider(screen, 250, 520, 300, 50, min=1, max=59, handleColour=(117,150,86), step=1)
-    output = TextBox(screen, 315, 600, 170, 80, fontSize=50, colour=(117,150,86), textColour=(0,0,0), radius=5)
+    slider = Slider(screen, 250, 250, 300, 50, min=1, max=59, handleColour=(117,150,86), step=1)
+    output = TextBox(screen, 315, 325, 170, 80, fontSize=50, colour=(117,150,86), textColour=(0,0,0), radius=5)
     output.disable()
+
+    slider2 = Slider(screen, 250, 600, 300, 50, min=1, max=20, handleColour=(117,150,86), step=1)
+    output2 = TextBox(screen, 315, 675, 170, 80, fontSize=50, colour=(117,150,86), textColour=(0,0,0), radius=5)
+    output2.disable()
 
     button = Button(
         # Mandatory Parameters
         screen,  # Surface to place button on
         250,  # X-coordinate of top left corner
-        180,  # Y-coordinate of top left corner
+        100,  # Y-coordinate of top left corner
         300,  # Width
         80,  # Height
 
@@ -45,7 +48,7 @@ def main():
         # Mandatory Parameters
         screen,  # Surface to place button on
         250,  # X-coordinate of top left corner
-        350,  # Y-coordinate of top left corner
+        450,  # Y-coordinate of top left corner
         300,  # Width
         80,  # Height
 
@@ -57,7 +60,7 @@ def main():
         hoverColour=(125,166,79),  # Colour of button when being hovered over
         pressedColour=(128,182,76),  # Colour of button when being clicked
         radius=20,  # Radius of border corners (leave empty for not curved)
-        onClick=lambda: playAI() # Function to call when clicked on
+        onClick=lambda: playAI(15, time) # Function to call when clicked on
     )
 
     while True:
@@ -70,6 +73,8 @@ def main():
 
         time = slider.getValue()
         output.setText(f"Time: {time}")
+        elo = slider2.getValue()
+        output2.setText(f"Skill: {elo}")
 
         pygame_widgets.update(eventList)
 
@@ -80,12 +85,16 @@ def main():
         # dt is delta time in seconds since last frame, used for framerate-
         # independent physics.
 
-def playLocal(time):
+def playAI(level, time):
     pygame.quit()
     pygame.init()
-    # initialTime = pygame.time.get_ticks()/1000
+    stockfish = Stockfish(depth=10)
+    stockfish.set_skill_level(1)
+    # stockfish.set_elo_rating(level)
+    stockfish.set_position([])
+
     screen = pygame.display.set_mode((800, 800))
-    pygame.display.set_caption("Local Chess Game")
+    pygame.display.set_caption("AI Chess Game")
     
     board = pygame.Surface((664, 664))
     running = True
@@ -113,7 +122,114 @@ def playLocal(time):
     findAttackers()
 
     while running:
+        ticks=pygame.time.get_ticks()
+        # millis=ticks%1000
+        # print(millis)
 
+        # poll for events
+        # pygame.QUIT event means the user clicked X to close your window
+        eventList = pygame.event.get()
+        for event in eventList:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                selected = helpers.posToLoc(pygame.mouse.get_pos())
+                if(selected!=None):
+                    if(not requirePromotion):
+                        if(pieces[selected]==None):
+                            selected = None 
+                            print("selected is none") 
+                        elif(wMove and pieces[selected].color=="w"):
+                            if len(pieces[selected].validMoves)==0:
+                                pieces[selected].findValidMoves()
+                    elif(selected in promoteLocs):
+                        promotePiece = promoteLocs[selected]
+                        pieces[promote] = Piece(promotePiece[0], promotePiece[1], promote)
+                        moveList[-1] = moveList[-1]+promotePiece[1]
+                        moveCount.count+=1
+                        promote = None
+                        requirePromotion = False
+                        promoteLocs = {}
+                        group, promote = drawPieces(screen, True)
+                        findAttackers()
+                        wking.checkForChecks()
+                        bking.checkForChecks()
+                    
+            if event.type == pygame.QUIT:
+                running = False
+            
+        if wMove:
+            times[1] = round(time*120 - (ticks/1000) - times[0])
+        else:
+            times[0] = round(time*120 - (ticks/1000) - times[1])
+        
+        if wMove:
+            times[1] = round(time*120 - (ticks/1000) - times[0])
+        else:
+            times[0] = round(time*120 - (ticks/1000) - times[1])
+
+        if moveCount.count!=lastCount:
+            print("Turn Number: ", moveCount.count)
+            stockfish.set_position(moveList)
+            if moveCount.count%2==1:
+                stockFishTurn(stockfish.get_best_move())
+                print(stockfish.get_evaluation())
+            lastCount = moveCount.count
+            findAttackers()
+            wking.checkForChecks()
+            bking.checkForChecks()
+
+        screen.fill((48,46,43))
+        screen.blit(board, (68, 68))
+        if(selected and pieces[selected]):
+            drawSelected(screen, selected)
+        else:
+            selected = None
+        drawIndex(screen, times)
+        group, promote = drawPieces(screen, False) 
+        group.update(eventList)
+        group.draw(screen)
+
+        if promote:
+            requirePromotion = True
+            promoteLocs = drawPromotion(screen, promote)
+
+        # flip() the display to put your work on screen
+        pygame.display.flip()
+    pygame.quit()
+
+def playLocal(time):
+    pygame.quit()
+    pygame.init()
+    # initialTime = pygame.time.get_ticks()/1000
+    screen = pygame.display.set_mode((800, 800))
+    pygame.display.set_caption("Local Chess Game")
+    stockfish = Stockfish(depth=15)
+    
+    board = pygame.Surface((664, 664))
+    running = True
+
+    selected = None
+
+    promote = None
+    requirePromotion = False
+    promoteLocs = {}
+
+    times = [time*60, time*60]
+
+    board = drawBoard(board)
+    drawIndex(screen, times)
+
+    group, promote = drawPieces(screen, True)
+
+    wking = pieces["e1"]
+    bking = pieces["e8"]
+
+    lastCount = moveCount.count
+    wMove = True
+
+
+    findAttackers()
+
+    while running:
         ticks=pygame.time.get_ticks()
         # millis=ticks%1000
         # print(millis)
@@ -138,6 +254,8 @@ def playLocal(time):
                     elif(selected in promoteLocs):
                         promotePiece = promoteLocs[selected]
                         pieces[promote] = Piece(promotePiece[0], promotePiece[1], promote)
+                        moveList[-1] = moveList[-1]+promotePiece[1]
+                        moveCount.count+=1
                         promote = None
                         requirePromotion = False
                         promoteLocs = {}
@@ -156,6 +274,8 @@ def playLocal(time):
 
         if moveCount.count!=lastCount:
             print("Turn Number: ", moveCount.count)
+            stockfish.set_position(moveList)
+            print(stockfish.get_best_move())
             lastCount = moveCount.count
             wMove = not wMove
             findAttackers()
@@ -222,7 +342,6 @@ def drawIndex(screen, times):
             time=str(time)[3:]
         else:
             time=timedelta(seconds=times[i])
-            print(time)
             time=str(time)[2:]
 
         rect = pygame.Rect(0,0,100,52)
@@ -401,6 +520,54 @@ def findAttackers():
                         blackAttack.append(move)
     attackers["w"] = whiteAttack
     attackers["b"] = blackAttack
+
+def stockFishTurn(move):
+    start = move[:2]
+    end = move[2:4]
+    stockPromote = None
+    if len(move)>4:
+        stockPromote = move[4]
+    moveList.append(move)
+
+    self = pieces[start]
+
+    pieces[self.loc] = None
+    self.loc = end
+    if(pieces[self.loc]):
+        taken[self.color].append(TakenPiece(pieces[self.loc].color, pieces[self.loc].type))
+    pieces[self.loc] = self
+    self.draw(self.surface)
+    self.moved = True
+
+    if self.type=="p" and self.loc == abs(int(start[1])-int(end[1]))>1:
+        self.up2 = True
+    else:
+        self.up2 = False
+    
+    epCheck = f"{end[0]}{int(end[1])+1}"
+    print(epCheck)
+    if epCheck in pieces and pieces[epCheck] and pieces[epCheck].color!=self.color and pieces[epCheck].up2:
+        taken[self.color].append(TakenPiece(pieces[epCheck].color, pieces[epCheck].type))
+        pieces[epCheck] = None
+    helpers.updatePonds(self, pieces)
+
+    if self.type == "k" and abs(int(ord(start[0])-96)-int(ord(end[0])-96))>1:
+        match end:
+            case "g8":
+                castleStart = "h8"
+                castleEnd = "f8"
+            case "c8":
+                castleStart = "a8"
+                castleEnd = "d8"
+        pieces[castleStart].loc = castleEnd
+        pieces[castleEnd] = pieces[castleStart]
+        pieces[castleStart] = None
+
+    if stockPromote:
+        pieces[end] = Piece("b", stockPromote, end)
+
+
+    moveCount.count += 1
 
 # def temp(screen, whiteAttack, blackAttack):
 #     for move in whiteAttack:
