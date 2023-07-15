@@ -2,7 +2,6 @@
 import pygame
 from piece import Piece, TakenPiece, pieces, attackers, taken, moveList
 import moveCount
-from moveCount import stockFish
 import helpers
 from roundedRect import AAfilledRoundedRect
 from datetime import timedelta
@@ -545,7 +544,6 @@ def stockFishTurn(move):
         self.up2 = False
     
     epCheck = f"{end[0]}{int(end[1])+1}"
-    print(epCheck)
     if epCheck in pieces and pieces[epCheck] and pieces[epCheck].color!=self.color and pieces[epCheck].up2:
         taken[self.color].append(TakenPiece(pieces[epCheck].color, pieces[epCheck].type))
         pieces[epCheck] = None

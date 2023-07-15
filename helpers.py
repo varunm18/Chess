@@ -1,5 +1,3 @@
-from copy import copy
-
 # relative to screen
 def locToPos(loc):
     file = int(ord(loc[0])) - 96
