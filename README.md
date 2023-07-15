@@ -1,5 +1,4 @@
 # Chess
-#### Video Demo:  https://youtu.be/yVKmfyGbhbM
 #### Description:
 
 Final Project for Harvard's CS50P Course
