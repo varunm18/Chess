@@ -5,6 +5,9 @@ Final Project for Harvard's CS50P Course
 
 A python project that codes chess from scratch. Specifically, I replicated the style of https://www.chess.com. The project gives the user the ability to play against an AI (stockfish) at a skill level they choose or a local game. They are also given the chose of their own time controls.
 
+<img width="400" alt="Screenshot 2023-07-15 at 12 24 38 AM" src="https://github.com/varunm18/Chess/assets/94499114/5a334916-0979-44e6-8cdf-6eb80fa66ada">
+
+
 #### This Project Uses pygame, pygame_widgets, and stockfish
 
     - main.py: program runner
